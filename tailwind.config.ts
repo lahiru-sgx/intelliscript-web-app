@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+//import { defineConfig } from 'vite-plugin-windicss';
 
 export default {
   content: [
@@ -21,3 +22,6 @@ export default {
   },
   plugins: [],
 } satisfies Config
+
+
+

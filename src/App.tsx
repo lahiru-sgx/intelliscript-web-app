@@ -1,14 +1,15 @@
 import './App.css'
+// src/App.tsx
+import React from 'react';
+import Chat from './components/Chat';
 
-function App() {
-
+const App: React.FC = () => {
   return (
-    <>
-      <div className="text-4xl font-bold underline bg-app-green">
-        Hello world!
-      </div>
-    </>
-  )
-}
+    <div className="App">
+      <Chat />
+    </div>
+  );
+};
 
-export default App
+export default App;
+
