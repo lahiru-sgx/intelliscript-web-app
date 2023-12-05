@@ -5,12 +5,41 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<string[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [showFeatures, setShowFeatures] = useState<boolean>(true);
+  const [visibleChats, setVisibleChats] = useState<number>(13);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const container = document.querySelector('.overflow-y-auto');
+      if (container) {
+        const scrollPosition = container.scrollTop;
+        const containerHeight = container.clientHeight;
+        const totalChats = 20;
+
+        // Calculate the index of the last chat to be visible
+        const newVisibleChats = Math.min(
+          Math.floor(scrollPosition / containerHeight) + 13, // Show 10 additional chats beyond the current index
+          totalChats
+        );
+
+        setVisibleChats(newVisibleChats);
+      }
+    };
+
+    // Attach the scroll event listener
+    const container = document.querySelector('.overflow-y-auto');
+    container?.addEventListener('scroll', handleScroll);
+
+    // Cleanup: Remove the event listener when the component unmounts
+    return () => {
+      container?.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -39,8 +68,10 @@ const Chat: React.FC = () => {
             type="text"
             className="p-2 border rounded-l-md"
             placeholder="Search in Chat..."
+            style={{ height: '32px' }}
+            maxLength={200}
           />
-          <button className="bg-blue-500 text-white p-2 rounded-r-md">Search</button>
+          <button className="bg-blue-500 text-white p-2 rounded-r-md"style={{ padding: '8px 12px' }}>Search</button>
         </div>
       </div>
 
@@ -48,11 +79,19 @@ const Chat: React.FC = () => {
       <div className="flex flex-1">
         {/* Left Side */}
         <div className="w-1/4 bg-white rounded-lg p-4 mr-4 overflow-y-auto">
+          <div className="mb-4">
+            <button className="bg-blue-500 text-white p-2 rounded-md mr-2">+ New Chat</button>
+        </div>
           <h2 className="text-lg font-semibold mb-2">Chat History</h2>
           {/* Display chat history here */}
           {Array.from({ length: 20 }, (_, index) => (
-            <div key={index} className="mb-4">Chat {index + 1}</div>
-          ))}
+            <div
+            key={index}
+            className={'mb-4 transition-opacity duration-300 ' + (index >= visibleChats ? 'opacity-0' : 'opacity-100')}
+          >
+            Chat {index + 1}
+          </div>
+        ))}
           <div className="fixed bottom-4">
             {/* User Details */}
             <div>Username: Udith Weerasinghe</div>
