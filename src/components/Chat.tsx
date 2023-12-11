@@ -1,6 +1,6 @@
 
 // src/components/Chat.tsx
-import React, { useState, useRef, useEffect,useCallback } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 
 const apiUrl = 'http://127.0.0.1:8000';
 
@@ -13,11 +13,6 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [showFeatures, setShowFeatures] = useState<boolean>(true);
-  //const [IsGreetMessageFetched, setIsGreetMessageFetched] = useState(false);
-
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  
   
   const handleSendMessage = async () => {
     if (newMessage.trim() !== '') {
@@ -33,6 +28,7 @@ const Chat: React.FC = () => {
     try {
       if (message) {
         setMessages((prevMessages) => [...prevMessages,{role :"user", content : message}]);
+        
       }
       const response = await fetch(`${apiUrl}/chatbot`, {
         method: 'POST',
@@ -46,9 +42,7 @@ const Chat: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        //console.log('Response data:', data);
-        //const userMessageContent = data.messages[0]?.content[0]?.content;
-        const reversedMessages = data.messages[0]?.content[0]?.content;
+        const reversedMessages = data.messages[0]?.content;
 
       if (reversedMessages) {
         // Add reversed messages to the state
@@ -69,8 +63,7 @@ const Chat: React.FC = () => {
   
       if (response.ok) {
         const data = await response.json();
-        //console.log('Greet message data:', data);
-  
+        
         // Check if greet message already exists in messages
         const greetMessageExists = messages.some(
           (message) => message.role === 'chatbot' && message.content === data.message
@@ -96,14 +89,9 @@ const Chat: React.FC = () => {
     const fetchData = async () => {
       await fetchGreetMessage();
     };
-  
     fetchData();
   }, [fetchGreetMessage]);
   
-  
-
-  
-
   return (
     <div className="flex flex-col h-screen bg-gray-100 p-4">
       {/* Top Stripe */}
@@ -207,7 +195,7 @@ const Chat: React.FC = () => {
             </div>
           </div>
 
-          <div ref={messagesEndRef} />
+          <div/>
         </div>
       </div>
     </div>
