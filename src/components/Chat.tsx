@@ -1,59 +1,108 @@
+
 // src/components/Chat.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect,useCallback } from 'react';
+
+const apiUrl = 'http://127.0.0.1:8000';
+
+interface ChatMessage {
+  role: string;
+  content: string;
+}
 
 const Chat: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [showFeatures, setShowFeatures] = useState<boolean>(true);
-  const [visibleChats, setVisibleChats] = useState<number>(13);
+  //const [IsGreetMessageFetched, setIsGreetMessageFetched] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const container = document.querySelector('.overflow-y-auto');
-      if (container) {
-        const scrollPosition = container.scrollTop;
-        const containerHeight = container.clientHeight;
-        const totalChats = 20;
-
-        // Calculate the index of the last chat to be visible
-        const newVisibleChats = Math.min(
-          Math.floor(scrollPosition / containerHeight) + 13, // Show 10 additional chats beyond the current index
-          totalChats
-        );
-
-        setVisibleChats(newVisibleChats);
-      }
-    };
-
-    // Attach the scroll event listener
-    const container = document.querySelector('.overflow-y-auto');
-    container?.addEventListener('scroll', handleScroll);
-
-    // Cleanup: Remove the event listener when the component unmounts
-    return () => {
-      container?.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleSendMessage = () => {
+  
+  
+  const handleSendMessage = async () => {
     if (newMessage.trim() !== '') {
-      setMessages([...messages, newMessage]);
+      await sendMessageToChatbot(newMessage);
+
+      //await fetchGreetMessage();
       setNewMessage('');
       setShowFeatures(false);
     }
   };
+
+  const sendMessageToChatbot = async (message: string) => {
+    try {
+      if (message) {
+        setMessages((prevMessages) => [...prevMessages,{role :"user", content : message}]);
+      }
+      const response = await fetch(`${apiUrl}/chatbot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: message }],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        //console.log('Response data:', data);
+        //const userMessageContent = data.messages[0]?.content[0]?.content;
+        const reversedMessages = data.messages[0]?.content[0]?.content;
+
+      if (reversedMessages) {
+        // Add reversed messages to the state
+        setMessages((prevMessages) => [...prevMessages, reversedMessages]);
+      }
+
+      } else {
+        console.error('Failed to send message to chatbot');
+      }
+    } catch (error) {
+      console.error('Error sending message to chatbot', error);
+    }
+  };
+
+  const fetchGreetMessage = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/greet`);
+  
+      if (response.ok) {
+        const data = await response.json();
+        //console.log('Greet message data:', data);
+  
+        // Check if greet message already exists in messages
+        const greetMessageExists = messages.some(
+          (message) => message.role === 'chatbot' && message.content === data.message
+        );
+  
+        if (!greetMessageExists) {
+          // Filter out existing greet messages and add the new one
+          setMessages((prevMessages) => [
+            ...prevMessages.filter((message) => message.role !== 'chatbot'),
+            { role: 'chatbot', content: data.message },
+          ]);
+        }
+      } else {
+        console.error('Failed to fetch chat messages');
+      }
+    } catch (error) {
+      console.error('Error fetching chat messages', error);
+    }
+  }, [messages]);
+  
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchGreetMessage();
+    };
+  
+    fetchData();
+  }, [fetchGreetMessage]);
+  
+  
+
+  
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 p-4">
@@ -71,35 +120,33 @@ const Chat: React.FC = () => {
             style={{ height: '32px' }}
             maxLength={200}
           />
-          <button className="bg-blue-500 text-white p-2 rounded-r-md"style={{ padding: '8px 12px' }}>Search</button>
+          <button className="bg-blue-500 text-white p-2 rounded-r-md"style={{ padding: '4px 12px' }}>Search</button>
         </div>
       </div>
-
       {/* Bottom Stripe */}
       <div className="flex flex-1">
         {/* Left Side */}
         <div className="w-1/4 bg-white rounded-lg p-4 mr-4 overflow-y-auto">
           <div className="mb-4">
             <button className="bg-blue-500 text-white p-2 rounded-md mr-2">+ New Chat</button>
-        </div>
+          </div>
           <h2 className="text-lg font-semibold mb-2">Chat History</h2>
           {/* Display chat history here */}
           {Array.from({ length: 20 }, (_, index) => (
             <div
-            key={index}
-            className={'mb-4 transition-opacity duration-300 ' + (index >= visibleChats ? 'opacity-0' : 'opacity-100')}
-          >
-            Chat {index + 1}
-          </div>
-        ))}
+              key={index}
+              //className={`mb-4 transition-opacity duration-300 ${index >= visibleChats ? 'opacity-0' : 'opacity-100'}`}
+            >
+              Chat {index + 1}
+            </div>
+          ))}
           <div className="fixed bottom-4">
             {/* User Details */}
             <div>Username: Udith Weerasinghe</div>
             <div>Email: udithw@syntaxgenie.com</div>
           </div>
         </div>
-
-        {/* Right Side */}
+            {/* Right Side */}
         <div className="flex-1 bg-white rounded-lg p-4 overflow-y-auto relative ">
           {showFeatures && (
             <div className="text-center text-gray-500 mb-4">
@@ -113,13 +160,32 @@ const Chat: React.FC = () => {
               </div>
             </div>
           )}
-
           {/* Display Messages */}
-          {messages.map((message, index) => (
-            <div key={index} className="mb-2">
-              {message}
-            </div>
-          ))}
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`mb-2 ${
+              message.role === 'user' ? 'bg-yellow-300 text-black' : 'bg-green-300 text-black'
+            }`}
+            style={{
+              borderRadius: '10px',
+              padding: '8px',
+              alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
+            }}
+          >
+            {message.role === 'chatbot' ? (
+              typeof message === 'string'
+                ? message // Plain string
+                : message.content // Extract original user message
+            ) : (
+              typeof message === 'string'
+                ? message // Plain string
+                : message.content // Extract reversed text
+            )}
+          </div>
+        ))}
+
+
 
           {/* Message Input */}
           <div className="absolute bottom-4 left-0 right-0">
@@ -149,4 +215,6 @@ const Chat: React.FC = () => {
 };
 
 export default Chat;
+
+
 
