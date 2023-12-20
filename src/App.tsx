@@ -1,7 +1,7 @@
 import './App.css'
 // src/App.tsx
 import React from 'react';
-import Chat from './components/Chat';
+import Chat from './components/ChatMain';
 
 const App: React.FC = () => {
   return (
