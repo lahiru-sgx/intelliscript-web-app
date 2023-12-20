@@ -17,7 +17,7 @@ interface History{
   messages: ChatMessage[];
 }
 
-const Chat: React.FC = () => {
+const ChatMain: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setcurrentMessage] = useState<string>('');
   const [showFeatures, setShowFeatures] = useState<boolean>(true);
@@ -284,4 +284,4 @@ const Chat: React.FC = () => {
   );
 };
 
-export default Chat;
+export default ChatMain;
