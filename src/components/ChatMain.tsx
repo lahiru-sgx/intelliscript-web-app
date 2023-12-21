@@ -1,4 +1,4 @@
-// src/components/Chat.tsx
+// src/components/ChatMain.tsx
 import React, { useState, useEffect } from 'react';
 import ChatBubble from './ChatBubble';
 import ChatHistory from './ChatHistory';
@@ -17,12 +17,13 @@ interface History{
   messages: ChatMessage[];
 }
 
-const ChatMain: React.FC = () => {
+const Chat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setcurrentMessage] = useState<string>('');
   const [showFeatures, setShowFeatures] = useState<boolean>(true);
   const [chatHistories, setChatHistories] = useState< History []>([]);
-  
+  const [currentChatId, setCurrentChatId] = useState<number | null>(null);
+
   const handleSendMessage = async () => {
     if (currentMessage.trim() !== '') {
       await sendMessageTosystem(currentMessage);
@@ -30,7 +31,6 @@ const ChatMain: React.FC = () => {
       await saveMessagesToBackend([...messages, { role: 'user', content: currentMessage, messageIndex: messages.length + 1 }]);
       setcurrentMessage('');
       setShowFeatures(false);
-      await fetchChatHistory();
     }
   };
 
@@ -38,8 +38,7 @@ const ChatMain: React.FC = () => {
     try {
       if (message) {
         await saveMessagesToBackend([{ role: 'user', content: message, messageIndex: messages.length + 1 }]);
-        setMessages((prevMessages) => [...prevMessages,{role :"user", content : message, messageIndex: prevMessages.length}]);
-        
+        setMessages((prevMessages) => [...prevMessages,{role :"user", content : message, messageIndex: prevMessages.length+1}]);
         
       }
       const response = await fetch(`${InferenceApiUrl}/system`, {
@@ -48,7 +47,7 @@ const ChatMain: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: message }],
+          messages: [{ role: 'user', content: message, messageIndex: messages.length}],
         }),
       });
 
@@ -109,7 +108,7 @@ const ChatMain: React.FC = () => {
   } ;
 
 
-  const handleAddNewChatHistory = async () => {
+  const handleAddNewChatHistory = () => {
     // Create a new chat history using the current conversation as initial messages
     const newChatHistory = {
       id: chatHistories.length + 1,
@@ -118,29 +117,11 @@ const ChatMain: React.FC = () => {
     
     // Update the chat histories state
     setChatHistories((prevChatHistories) => [...prevChatHistories, newChatHistory]);
+    setCurrentChatId(newChatHistory.id);
 
     // Start a new chat with an empty messages array
     setMessages([]);
     setShowFeatures(true);
-    await saveChatHistoryToBackend(newChatHistory);
-  };
-
-  const saveChatHistoryToBackend = async (chatHistory: History) => {
-    try {
-      const response = await fetch(`${HistoryApiUrl}/new_chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(chatHistory),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to save chat history to the backend');
-      }
-    } catch (error) {
-      console.error('Error saving chat history to the backend', error);
-    }
   };
 
   const handleCreateNewChat = async (chatId: number) => {
@@ -225,7 +206,7 @@ const ChatMain: React.FC = () => {
             <button onClick={handleAddNewChatHistory} className="bg-blue-500 text-white p-2 rounded-md mr-2">+ New Chat</button>
           </div>
           <h2 className="text-lg font-semibold mb-2">Chat History</h2>
-          <ChatHistory chatHistories={chatHistories} onSelectChat={handleCreateNewChat} />
+          <ChatHistory chatHistories={chatHistories} onSelectChat={handleCreateNewChat} currentChatId={currentChatId} />
         
             {/* User Details */}
             <div className="mb-4">
@@ -284,4 +265,4 @@ const ChatMain: React.FC = () => {
   );
 };
 
-export default ChatMain;
+export default Chat;
